@@ -1,2 +1,2 @@
-# xe.school
-美股开户
+#美股开户
+#https://xe.school
