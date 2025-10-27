@@ -1,5 +1,0 @@
-{
-  "installCommand": "npm install --no-audit --no-fund --legacy-peer-deps",
-  "buildCommand": "npx @tarojs/cli@4.1.7 build --type h5",
-  "outputDirectory": "dist"
-}
