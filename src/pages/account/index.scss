@@ -1,0 +1,24 @@
+.account { padding: 16px; display: flex; justify-content: center; }
+.card { width: 100%; max-width: 520px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.06); padding: 16px; }
+.title { font-size: 18px; font-weight: 600; }
+.tabs { display: flex; gap: 12px; margin-top: 12px; }
+.tab { padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 999px; color: #374151; }
+.tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+.form { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.primary { background: #2563eb; color: #fff; }
+.warn { background: #ef4444; color: #fff; }
+.hint { color: #2563eb; }
+.hint.success { color: #16a34a; }
+.hint.error { color: #ef4444; }
+.desc { color: #6b7280; font-size: 12px; }
+.section { margin-top: 8px; font-weight: 600; }
+.row { color: #111827; }
+.otpRow { display: flex; gap: 8px; align-items: center; }
+
+/* 信息卡片 */
+.profile { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; }
+.avatar { width: 44px; height: 44px; border-radius: 9999px; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge { padding: 2px 6px; border-radius: 999px; font-size: 12px; border: 1px solid #e5e7eb; color: #374151; }
+.badge.ok { background: #d1fae5; border-color: #10b981; color: #065f46; }
+.badge.warn { background: #fee2e2; border-color: #ef4444; color: #7f1d1d; }
