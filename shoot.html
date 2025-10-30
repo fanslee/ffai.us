@@ -127,6 +127,19 @@
             position: absolute;
             left: 0;
         }
+        .difficulty {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .difficulty-btn {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            background: linear-gradient(to bottom, #6666ff, #3333cc);
+        }
+        .difficulty-btn.active {
+            background: linear-gradient(to bottom, #ff9900, #ff6600);
+        }
         footer {
             margin-top: 20px;
             font-size: 0.9rem;
@@ -163,7 +176,7 @@
                 </div>
                 <div class="stat-box">
                     <div>弹药</div>
-                    <div class="stat-value" id="ammo">500</div>
+                    <div class="stat-value" id="ammo">1000</div>
                 </div>
                 <div class="stat-box">
                     <div>连击</div>
@@ -171,7 +184,7 @@
                 </div>
                 <div class="stat-box">
                     <div>时间</div>
-                    <div class="stat-value" id="timer">60</div>
+                    <div class="stat-value" id="timer">120</div>
                 </div>
             </div>
             
@@ -183,13 +196,19 @@
                 <button id="fullscreenBtn">全屏模式</button>
             </div>
             
+            <div class="difficulty">
+                <button class="difficulty-btn active" data-time="180" data-ammo="1500">简单 (3分钟)</button>
+                <button class="difficulty-btn" data-time="120" data-ammo="1000">普通 (2分钟)</button>
+                <button class="difficulty-btn" data-time="90" data-ammo="700">困难 (1.5分钟)</button>
+            </div>
+            
             <div class="instructions">
                 <h3>游戏说明</h3>
                 <ul>
                     <li>移动鼠标瞄准，点击鼠标左键发射加特林子弹</li>
                     <li>击中贾跃亭形象获得10分，连续击中增加连击倍数</li>
                     <li>击中特殊部位（头部）获得双倍分数</li>
-                    <li>游戏时间60秒，尽可能获得高分</li>
+                    <li>选择不同难度，游戏时间和弹药量会变化</li>
                     <li>弹药有限，请合理使用！</li>
                 </ul>
             </div>
@@ -212,59 +231,89 @@
             const startBtn = document.getElementById('startBtn');
             const restartBtn = document.getElementById('restartBtn');
             const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const difficultyBtns = document.querySelectorAll('.difficulty-btn');
             
             // 游戏变量
             let score = 0;
-            let ammo = 500;
+            let ammo = 1000;
             let combo = 0;
-            let timeLeft = 60;
+            let timeLeft = 120;
             let gameActive = false;
             let gameLoop;
+            let timerInterval;
             let targets = [];
             let particles = [];
             let lastShotTime = 0;
-            let shootRate = 100; // 毫秒
-            let mouseX = 0;
-            let mouseY = 0;
+            let shootRate = 80; // 毫秒
+            let mouseX = canvas.width / 2;
+            let mouseY = canvas.height / 2;
             let isMouseDown = false;
             
-            // 音频上下文（用于音效）
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // 难度设置
+            let gameDuration = 120; // 默认2分钟
+            let maxAmmo = 1000;
+            
+            // 设置难度
+            difficultyBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    difficultyBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    gameDuration = parseInt(this.dataset.time);
+                    maxAmmo = parseInt(this.dataset.ammo);
+                    
+                    if (!gameActive) {
+                        timeLeft = gameDuration;
+                        ammo = maxAmmo;
+                        updateUI();
+                    }
+                });
+            });
             
             // 创建音效
             function createShotSound() {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.setValueAtTime(120, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.1);
-                
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(120, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.1);
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                } catch (e) {
+                    console.log('音效创建失败:', e);
+                }
             }
             
             function createHitSound() {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.2);
-                
-                gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.2);
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.2);
+                    
+                    gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
+                } catch (e) {
+                    console.log('音效创建失败:', e);
+                }
             }
             
             // 目标类
@@ -380,9 +429,9 @@
             // 初始化游戏
             function initGame() {
                 score = 0;
-                ammo = 500;
+                ammo = maxAmmo;
                 combo = 0;
-                timeLeft = 60;
+                timeLeft = gameDuration;
                 targets = [];
                 particles = [];
                 
@@ -470,12 +519,6 @@
             // 游戏主循环
             function update() {
                 if (!gameActive) return;
-                
-                // 更新时间
-                if (timeLeft <= 0) {
-                    endGame();
-                    return;
-                }
                 
                 // 更新目标
                 targets.forEach(target => {
@@ -579,20 +622,24 @@
                 startBtn.disabled = true;
                 
                 // 启动游戏循环
-                gameLoop = setInterval(() => {
-                    update();
-                    // 每秒更新时间
-                    if (Math.floor(Date.now() / 1000) % 1 === 0) {
-                        timeLeft--;
-                        updateUI();
+                gameLoop = setInterval(update, 1000 / 60); // 60 FPS
+                
+                // 启动计时器（每秒更新一次）
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    updateUI();
+                    
+                    if (timeLeft <= 0) {
+                        endGame();
                     }
-                }, 1000 / 60); // 60 FPS
+                }, 1000);
             }
             
             // 结束游戏
             function endGame() {
                 gameActive = false;
                 clearInterval(gameLoop);
+                clearInterval(timerInterval);
                 
                 startBtn.textContent = "开始游戏";
                 startBtn.disabled = false;
@@ -634,6 +681,7 @@
                 initGame();
                 if (gameActive) {
                     clearInterval(gameLoop);
+                    clearInterval(timerInterval);
                     gameActive = false;
                     startBtn.textContent = "开始游戏";
                     startBtn.disabled = false;
