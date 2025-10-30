@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加特林狂扫贾跃亭 - 发泄小游戏</title>
+    <title>扫射贾跃亭</title>
     <style>
         * {
             margin: 0;
@@ -140,6 +140,26 @@
         .difficulty-btn.active {
             background: linear-gradient(to bottom, #ff9900, #ff6600);
         }
+        
+        /* 全屏模式下的控制面板 */
+        #fullscreenControls {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+            gap: 10px;
+        }
+        
+        #fullscreenControls button {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+        
         footer {
             margin-top: 20px;
             font-size: 0.9rem;
@@ -164,7 +184,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>加特林狂扫贾跃亭</h1>
+            <h1>扫射贾跃亭</h1>
             <p class="subtitle">发泄你的情绪，扫射一切不快！</p>
         </header>
         
@@ -210,6 +230,7 @@
                     <li>击中特殊部位（头部）获得双倍分数</li>
                     <li>选择不同难度，游戏时间和弹药量会变化</li>
                     <li>弹药有限，请合理使用！</li>
+                    <li>按ESC键可退出全屏模式</li>
                 </ul>
             </div>
         </div>
@@ -217,6 +238,13 @@
         <footer>
             <p>本游戏仅供娱乐，人物形象经过艺术化处理</p>
         </footer>
+    </div>
+
+    <!-- 全屏模式下的控制面板 -->
+    <div id="fullscreenControls">
+        <button id="fsStartBtn">开始游戏</button>
+        <button id="fsRestartBtn">重新开始</button>
+        <button id="exitFullscreenBtn">退出全屏</button>
     </div>
 
     <script>
@@ -233,6 +261,12 @@
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             const difficultyBtns = document.querySelectorAll('.difficulty-btn');
             
+            // 全屏控制元素
+            const fullscreenControls = document.getElementById('fullscreenControls');
+            const fsStartBtn = document.getElementById('fsStartBtn');
+            const fsRestartBtn = document.getElementById('fsRestartBtn');
+            const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
+            
             // 游戏变量
             let score = 0;
             let ammo = 1000;
@@ -248,6 +282,7 @@
             let mouseX = canvas.width / 2;
             let mouseY = canvas.height / 2;
             let isMouseDown = false;
+            let isFullscreen = false;
             
             // 难度设置
             let gameDuration = 120; // 默认2分钟
@@ -512,7 +547,11 @@
                     ctx.fillText('加特林狂扫贾跃亭', canvas.width/2, canvas.height/2 - 50);
                     
                     ctx.font = '24px Arial';
-                    ctx.fillText('点击"开始游戏"按钮开始', canvas.width/2, canvas.height/2 + 20);
+                    if (isFullscreen) {
+                        ctx.fillText('点击"开始游戏"按钮开始', canvas.width/2, canvas.height/2 + 20);
+                    } else {
+                        ctx.fillText('点击"开始游戏"按钮开始', canvas.width/2, canvas.height/2 + 20);
+                    }
                 }
             }
             
@@ -620,6 +659,8 @@
                 gameActive = true;
                 startBtn.textContent = "游戏进行中";
                 startBtn.disabled = true;
+                fsStartBtn.textContent = "游戏进行中";
+                fsStartBtn.disabled = true;
                 
                 // 启动游戏循环
                 gameLoop = setInterval(update, 1000 / 60); // 60 FPS
@@ -643,6 +684,8 @@
                 
                 startBtn.textContent = "开始游戏";
                 startBtn.disabled = false;
+                fsStartBtn.textContent = "开始游戏";
+                fsStartBtn.disabled = false;
                 
                 // 显示结束画面
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
@@ -660,6 +703,69 @@
                 ctx.fillText('点击"重新开始"按钮再玩一次', canvas.width/2, canvas.height/2 + 50);
             }
             
+            // 进入全屏模式
+            function enterFullscreen() {
+                if (canvas.requestFullscreen) {
+                    canvas.requestFullscreen();
+                } else if (canvas.webkitRequestFullscreen) {
+                    canvas.webkitRequestFullscreen();
+                } else if (canvas.mozRequestFullScreen) {
+                    canvas.mozRequestFullScreen();
+                } else if (canvas.msRequestFullscreen) {
+                    canvas.msRequestFullscreen();
+                }
+            }
+            
+            // 退出全屏模式
+            function exitFullscreen() {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+            
+            // 全屏状态变化监听
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+            
+            function handleFullscreenChange() {
+                isFullscreen = !!(document.fullscreenElement || 
+                                document.webkitFullscreenElement || 
+                                document.mozFullScreenElement ||
+                                document.msFullscreenElement);
+                
+                if (isFullscreen) {
+                    fullscreenControls.style.display = 'flex';
+                    // 调整canvas尺寸适应全屏
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    // 重新初始化游戏
+                    if (gameActive) {
+                        endGame();
+                    }
+                    initGame();
+                    draw();
+                } else {
+                    fullscreenControls.style.display = 'none';
+                    // 恢复canvas原始尺寸
+                    canvas.width = 800;
+                    canvas.height = 500;
+                    // 重新初始化游戏
+                    if (gameActive) {
+                        endGame();
+                    }
+                    initGame();
+                    draw();
+                }
+            }
+            
             // 事件监听
             canvas.addEventListener('mousemove', function(e) {
                 const rect = canvas.getBoundingClientRect();
@@ -675,29 +781,33 @@
                 isMouseDown = false;
             });
             
+            // 普通模式按钮事件
             startBtn.addEventListener('click', startGame);
-            
             restartBtn.addEventListener('click', function() {
                 initGame();
                 if (gameActive) {
-                    clearInterval(gameLoop);
-                    clearInterval(timerInterval);
-                    gameActive = false;
-                    startBtn.textContent = "开始游戏";
-                    startBtn.disabled = false;
+                    endGame();
                 }
                 draw();
             });
             
-            fullscreenBtn.addEventListener('click', function() {
-                if (canvas.requestFullscreen) {
-                    canvas.requestFullscreen();
-                } else if (canvas.webkitRequestFullscreen) {
-                    canvas.webkitRequestFullscreen();
-                } else if (canvas.mozRequestFullScreen) {
-                    canvas.mozRequestFullScreen();
-                } else if (canvas.msRequestFullscreen) {
-                    canvas.msRequestFullscreen();
+            // 全屏模式按钮事件
+            fsStartBtn.addEventListener('click', startGame);
+            fsRestartBtn.addEventListener('click', function() {
+                initGame();
+                if (gameActive) {
+                    endGame();
+                }
+                draw();
+            });
+            exitFullscreenBtn.addEventListener('click', exitFullscreen);
+            
+            fullscreenBtn.addEventListener('click', enterFullscreen);
+            
+            // ESC键退出全屏
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && isFullscreen) {
+                    exitFullscreen();
                 }
             });
             
